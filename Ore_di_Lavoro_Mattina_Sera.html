@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ore di Lavoro">
+<title>Ore di Lavoro</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f5f5f7;color:#111}
+main{max-width:650px;margin:auto;padding:20px}
+.card{background:white;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 2px 10px #0001}
+h1{margin-top:0;font-size:28px} h3{margin-bottom:4px} label{display:block;font-weight:600;margin:12px 0 6px}
+input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccc;border-radius:10px;font-size:17px}
+button{border:0;border-radius:10px;padding:12px 15px;font-size:16px;margin:8px 6px 0 0;background:#ddd}
+.primary{background:#111;color:white}.danger{background:#eee}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#status{font-weight:600;margin-top:10px}
+.item{border-top:1px solid #ddd;padding:12px 0}.item:first-child{border-top:0}
+.small{color:#666;font-size:14px}
+.total{font-size:20px;font-weight:700}
+@media(max-width:480px){.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<div class="card">
+<h1>⏱️ Ore di Lavoro</h1>
+<div>
+<label for="date">Data</label>
+<input id="date" type="date">
+</div>
+<h3>Mattina</h3>
+<div class="row">
+<div><label for="morningStart">Inizio mattina</label><input id="morningStart" type="time"></div>
+<div><label for="morningEnd">Fine mattina</label><input id="morningEnd" type="time"></div>
+</div>
+<h3>Sera</h3>
+<div class="row">
+<div><label for="eveningStart">Inizio sera</label><input id="eveningStart" type="time"></div>
+<div><label for="eveningEnd">Fine sera</label><input id="eveningEnd" type="time"></div>
+</div>
+<button class="primary" onclick="saveDay()">💾 Salva giornata</button>
+<button onclick="clearForm()">Pulisci</button>
+<div id="status"></div>
+</div>
+
+<div class="card">
+<h2>Riepilogo del mese</h2>
+<label for="month">Mese</label><input id="month" type="month" onchange="render()">
+<div id="monthly" class="total">0 ore 00 min</div>
+<div id="list"></div>
+<button onclick="window.print()">🖨️ Stampa / PDF</button>
+<button onclick="exportCSV()">📄 Esporta CSV</button>
+</div>
+</main>
+<script>
+const KEY="ore_lavoro_dati_v5";
+const dateEl=document.getElementById("date");
+const morningStartEl=document.getElementById("morningStart");
+const morningEndEl=document.getElementById("morningEnd");
+const eveningStartEl=document.getElementById("eveningStart");
+const eveningEndEl=document.getElementById("eveningEnd");
+const statusEl=document.getElementById("status");
+const monthEl=document.getElementById("month");
+const monthlyEl=document.getElementById("monthly");
+const listEl=document.getElementById("list");
+
+function loadData(){
+  try{
+    const raw=localStorage.getItem(KEY);
+    return raw?JSON.parse(raw):{};
+  }catch(e){return {}}
+}
+function saveData(data){
+  try{localStorage.setItem(KEY,JSON.stringify(data));return true}
+  catch(e){statusEl.textContent="⚠️ Il browser non permette il salvataggio.";return false}
+}
+function today(){
+  const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function mins(t){
+  const p=t.split(":").map(Number);
+  return p[0]*60+p[1];
+}
+function fmt(n){
+  n=Math.max(0,Math.round(Number(n)||0));
+  return String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0");
+}
+function dateText(d){return d.split("-").reverse().join("/");}
+
+function calcPeriod(a,b){
+  if(!a || !b)return 0;
+  let x=mins(a),y=mins(b);
+  if(y<x)y+=1440;
+  return y-x;
+}
+
+function init(){
+  const d=today();
+  dateEl.value=d;
+  monthEl.value=d.slice(0,7);
+  render();
+}
+
+function saveDay(){
+  const date=dateEl.value;
+  const ms=morningStartEl.value;
+  const me=morningEndEl.value;
+  const es=eveningStartEl.value;
+  const ee=eveningEndEl.value;
+
+  if(!date){
+    statusEl.textContent="⚠️ Inserisci la data.";
+    return;
+  }
+  if((ms && !me)||(!ms && me)){
+    statusEl.textContent="⚠️ Completa entrambi gli orari della mattina.";
+    return;
+  }
+  if((es && !ee)||(!es && ee)){
+    statusEl.textContent="⚠️ Completa entrambi gli orari della sera.";
+    return;
+  }
+  if(!ms && !es){
+    statusEl.textContent="⚠️ Inserisci almeno un turno.";
+    return;
+  }
+
+  const morning=calcPeriod(ms,me);
+  const evening=calcPeriod(es,ee);
+  const total=morning+evening;
+
+  const data=loadData();
+  data[date]={
+    date,
+    morningStart:ms,
+    morningEnd:me,
+    eveningStart:es,
+    eveningEnd:ee,
+    total
+  };
+
+  if(!saveData(data))return;
+  const check=loadData();
+  if(!check[date]){
+    statusEl.textContent="⚠️ Salvataggio non riuscito.";
+    return;
+  }
+
+  statusEl.textContent="✅ Giornata salvata: "+dateText(date);
+  monthEl.value=date.slice(0,7);
+  render();
+}
+
+function clearForm(){
+  morningStartEl.value="";
+  morningEndEl.value="";
+  eveningStartEl.value="";
+  eveningEndEl.value="";
+  statusEl.textContent="";
+}
+
+function editDay(k){
+  const data=loadData();
+  const x=data[k];
+  if(!x)return;
+
+  dateEl.value=x.date;
+
+  // Supporto anche per le vecchie giornate salvate con un solo inizio/fine.
+  morningStartEl.value=x.morningStart || x.start || "";
+  morningEndEl.value=x.morningEnd || x.end || "";
+  eveningStartEl.value=x.eveningStart || "";
+  eveningEndEl.value=x.eveningEnd || "";
+
+  statusEl.textContent="Modifica la giornata e premi Salva giornata.";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function delDay(k){
+  if(!confirm("Eliminare questa giornata?"))return;
+  const data=loadData();
+  delete data[k];
+  saveData(data);
+  render();
+}
+
+function render(){
+  const m=monthEl.value;
+  const data=loadData();
+
+  const arr=Object.values(data)
+    .filter(x=>x&&x.date&&x.date.slice(0,7)===m)
+    .sort((a,b)=>a.date.localeCompare(b.date));
+
+  const sum=arr.reduce((s,x)=>s+(Number(x.total)||0),0);
+  monthlyEl.textContent=Math.floor(sum/60)+" ore "+String(sum%60).padStart(2,"0")+" min";
+
+  if(!arr.length){
+    listEl.innerHTML="<p class='small'>Nessuna giornata registrata.</p>";
+    return;
+  }
+
+  listEl.innerHTML=arr.map(x=>{
+    const ms=x.morningStart||x.start||"";
+    const me=x.morningEnd||x.end||"";
+    const es=x.eveningStart||"";
+    const ee=x.eveningEnd||"";
+    let turns="";
+    if(ms&&me)turns+="Mattina: "+ms+" → "+me;
+    if(es&&ee)turns+=(turns?"<br>":"")+"Sera: "+es+" → "+ee;
+
+    return `<div class="item">
+      <b>${dateText(x.date)}</b><br>
+      ${turns}<br>
+      <b>Totale: ${fmt(x.total)}</b><br>
+      <button onclick="editDay('${x.date}')">Modifica</button>
+      <button class="danger" onclick="delDay('${x.date}')">Elimina</button>
+    </div>`;
+  }).join("");
+}
+
+function exportCSV(){
+  const data=loadData(),m=monthEl.value;
+  const arr=Object.values(data)
+    .filter(x=>x&&x.date&&x.date.startsWith(m))
+    .sort((a,b)=>a.date.localeCompare(b.date));
+
+  let csv="Data;Inizio mattina;Fine mattina;Inizio sera;Fine sera;Ore lavorate\n";
+  csv+=arr.map(x=>{
+    return `${x.date};${x.morningStart||x.start||""};${x.morningEnd||x.end||""};${x.eveningStart||""};${x.eveningEnd||""};${fmt(x.total)}`;
+  }).join("\n");
+
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="ore_di_lavoro_"+m+".csv";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+monthEl.addEventListener("change",render);
+init();
+</script>
+</body>
+</html>
