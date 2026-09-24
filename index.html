@@ -7,92 +7,488 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Ore di Lavoro">
 <title>Ore di Lavoro</title>
+
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f5f5f7;color:#111}
-main{max-width:650px;margin:auto;padding:20px}
-.card{background:white;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 2px 10px #0001}
-h1{margin-top:0;font-size:28px} label{display:block;font-weight:600;margin:12px 0 6px}
-input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccc;border-radius:10px;font-size:17px}
-button{border:0;border-radius:10px;padding:12px 15px;font-size:16px;margin:8px 6px 0 0;background:#ddd}
-.primary{background:#111;color:white}.danger{background:#eee}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-#status{font-weight:600;margin-top:10px}
-.item{border-top:1px solid #ddd;padding:12px 0}.item:first-child{border-top:0}
-.small{color:#666;font-size:14px}
-.total{font-size:20px;font-weight:700}
-@media(max-width:480px){.row{grid-template-columns:1fr}}
+body{
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+margin:0;
+background:#f5f5f7;
+color:#111
+}
+main{
+max-width:650px;
+margin:auto;
+padding:20px
+}
+.card{
+background:white;
+border-radius:16px;
+padding:18px;
+margin-bottom:14px;
+box-shadow:0 2px 10px #0001
+}
+h1{
+margin-top:0;
+font-size:28px
+}
+label{
+display:block;
+font-weight:600;
+margin:12px 0 6px
+}
+input{
+width:100%;
+box-sizing:border-box;
+padding:12px;
+border:1px solid #ccc;
+border-radius:10px;
+font-size:17px
+}
+button{
+border:0;
+border-radius:10px;
+padding:12px 15px;
+font-size:16px;
+margin:8px 6px 0 0;
+background:#ddd
+}
+.primary{
+background:#111;
+color:white
+}
+.danger{
+background:#eee
+}
+.row{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:12px
+}
+#status{
+font-weight:600;
+margin-top:10px
+}
+.item{
+border-top:1px solid #ddd;
+padding:12px 0
+}
+.item:first-child{
+border-top:0
+}
+.small{
+color:#666;
+font-size:14px
+}
+.total{
+font-size:20px;
+font-weight:700
+}
+@media(max-width:480px){
+.row{
+grid-template-columns:1fr
+}
+}
+@media print{
+button{
+display:none
+}
+.card{
+box-shadow:none
+}
+body{
+background:white
+}
+}
 </style>
 </head>
+
 <body>
 <main>
-<div class="card">
-<h1>⏱️ Ore di Lavoro</h1>
-<div class="row">
-<div><label for="date">Data</label><input id="date" type="date"></div>
-<div><label for="break">Pausa (minuti)</label><input id="break" type="number" min="0" value="0"></div>
-</div>
-<div class="row">
-<div><label for="start">Orario inizio</label><input id="start" type="time"></div>
-<div><label for="end">Orario fine</label><input id="end" type="time"></div>
-</div>
-<button class="primary" onclick="saveDay()">💾 Salva giornata</button>
-<button onclick="clearForm()">Pulisci</button>
-<div id="status"></div>
-</div>
 
 <div class="card">
+
+<h1>⏱️ Ore di Lavoro</h1>
+
+<label for="date">Data</label>
+<input id="date" type="date">
+
+<div class="row">
+
+<div>
+<label for="startMorning">Inizio mattina</label>
+<input id="startMorning" type="time">
+</div>
+
+<div>
+<label for="endMorning">Fine mattina</label>
+<input id="endMorning" type="time">
+</div>
+
+</div>
+
+<div class="row">
+
+<div>
+<label for="startEvening">Inizio sera</label>
+<input id="startEvening" type="time">
+</div>
+
+<div>
+<label for="endEvening">Fine sera</label>
+<input id="endEvening" type="time">
+</div>
+
+</div>
+
+<label for="break">Pausa aggiuntiva (minuti)</label>
+<input id="break" type="number" min="0" value="0">
+
+<button class="primary" onclick="saveDay()">💾 Salva giornata</button>
+<button onclick="clearForm()">Pulisci</button>
+
+<div id="status"></div>
+
+</div>
+
+
+<div class="card">
+
 <h2>Riepilogo del mese</h2>
-<label for="month">Mese</label><input id="month" type="month" onchange="render()">
-<div id="monthly" class="total">0 ore 00 min</div>
+
+<label for="month">Mese</label>
+<input id="month" type="month" onchange="render()">
+
+<div id="monthly" class="total">00 ore 00 min</div>
+
 <div id="list"></div>
+
 <button onclick="window.print()">🖨️ Stampa / PDF</button>
 <button onclick="exportCSV()">📄 Esporta CSV</button>
+
 </div>
+
 </main>
+
+
 <script>
+
 const KEY="ore_lavoro_dati_v3";
-function load(){try{return JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){return {}}}
-function store(d){localStorage.setItem(KEY,JSON.stringify(d))}
+
+
+function load(){
+try{
+return JSON.parse(localStorage.getItem(KEY)||"{}")
+}catch(e){
+return {}
+}
+}
+
+
+function store(d){
+localStorage.setItem(KEY,JSON.stringify(d))
+}
+
+
 function today(){
- const d=new Date(); return d.toISOString().slice(0,10);
+const d=new Date();
+return d.toISOString().slice(0,10);
 }
+
+
 function init(){
- const d=today(); date.value=d; month.value=d.slice(0,7); render();
+
+const d=today();
+
+date.value=d;
+
+month.value=d.slice(0,7);
+
+render();
+
 }
-function mins(t){const [h,m]=t.split(":").map(Number);return h*60+m}
-function fmt(n){return String(Math.floor(n/60)).padStart(2,"0")+":"+String(n%60).padStart(2,"0")}
+
+
+function mins(t){
+
+if(!t) return null;
+
+const [h,m]=t.split(":").map(Number);
+
+return h*60+m;
+
+}
+
+
+function durata(inizio,fine){
+
+if(!inizio || !fine) return 0;
+
+let a=mins(inizio);
+let b=mins(fine);
+
+if(b<a) b+=1440;
+
+return Math.max(0,b-a);
+
+}
+
+
+function fmt(n){
+
+return String(Math.floor(n/60)).padStart(2,"0")
++":"+String(n%60).padStart(2,"0");
+
+}
+
+
 function saveDay(){
- if(!date.value||!start.value||!end.value){status.textContent="⚠️ Inserisci data, inizio e fine.";return}
- let a=mins(start.value), b=mins(end.value);
- if(b<a)b+=1440;
- const p=Math.max(0,Number(break.value)||0);
- const total=Math.max(0,b-a-p);
- const d=load();
- d[date.value]={date:date.value,start:start.value,end:end.value,break:p,total:total};
- store(d);
- status.textContent="✅ Salvato!";
- month.value=date.value.slice(0,7);
- render();
+
+if(
+!date.value ||
+!startMorning.value ||
+!endMorning.value ||
+!startEvening.value ||
+!endEvening.value
+){
+
+status.textContent="⚠️ Inserisci data e tutti e quattro gli orari.";
+
+return;
+
 }
-function clearForm(){start.value="";end.value="";break.value=0;status.textContent=""}
+
+
+const mattina=durata(
+startMorning.value,
+endMorning.value
+);
+
+
+const sera=durata(
+startEvening.value,
+endEvening.value
+);
+
+
+const p=Math.max(
+0,
+Number(break.value)||0
+);
+
+
+const total=Math.max(
+0,
+mattina+sera-p
+);
+
+
+const d=load();
+
+
+d[date.value]={
+
+date:date.value,
+
+startMorning:startMorning.value,
+
+endMorning:endMorning.value,
+
+startEvening:startEvening.value,
+
+endEvening:endEvening.value,
+
+break:p,
+
+total:total
+
+};
+
+
+store(d);
+
+
+status.textContent="✅ Giornata salvata!";
+
+month.value=date.value.slice(0,7);
+
+render();
+
+}
+
+
+function clearForm(){
+
+startMorning.value="";
+
+endMorning.value="";
+
+startEvening.value="";
+
+endEvening.value="";
+
+break.value=0;
+
+status.textContent="";
+
+}
+
+
 function editDay(k){
- const x=load()[k]; date.value=x.date;start.value=x.start;end.value=x.end;break.value=x.break;status.textContent="Modifica la giornata e premi Salva giornata.";
+
+const x=load()[k];
+
+date.value=x.date;
+
+startMorning.value=x.startMorning||"";
+
+endMorning.value=x.endMorning||"";
+
+startEvening.value=x.startEvening||"";
+
+endEvening.value=x.endEvening||"";
+
+break.value=x.break||0;
+
+status.textContent="Modifica la giornata e premi Salva giornata.";
+
 }
+
+
 function delDay(k){
- if(confirm("Eliminare questa giornata?")){let d=load();delete d[k];store(d);render();}
+
+if(confirm("Eliminare questa giornata?")){
+
+let d=load();
+
+delete d[k];
+
+store(d);
+
+render();
+
 }
+
+}
+
+
 function render(){
- const m=month.value; const d=load(); let arr=Object.values(d).filter(x=>x.date.slice(0,7)===m).sort((a,b)=>a.date.localeCompare(b.date));
- let sum=arr.reduce((s,x)=>s+x.total,0); monthly.textContent=fmt(sum).replace(":", " ore " )+" min";
- list.innerHTML=arr.length?arr.map(x=>`<div class="item"><b>${x.date}</b><br>${x.start} → ${x.end} · pausa ${x.break} min<br><b>${fmt(x.total)}</b><br><button onclick="editDay('${x.date}')">Modifica</button><button class="danger" onclick="delDay('${x.date}')">Elimina</button></div>`).join(""):"<p class='small'>Nessuna giornata registrata.</p>";
+
+const m=month.value;
+
+const d=load();
+
+
+let arr=Object.values(d)
+
+.filter(x=>x.date && x.date.slice(0,7)===m)
+
+.sort((a,b)=>a.date.localeCompare(b.date));
+
+
+let sum=arr.reduce(
+(s,x)=>s+(Number(x.total)||0),
+0
+);
+
+
+monthly.textContent=
+fmt(sum).replace(":"," ore ")
++" min";
+
+
+list.innerHTML=arr.length?
+
+arr.map(x=>`
+
+<div class="item">
+
+<b>${x.date}</b><br>
+
+Mattina:
+${x.startMorning||"--:--"}
+→
+${x.endMorning||"--:--"}<br>
+
+Sera:
+${x.startEvening||"--:--"}
+→
+${x.endEvening||"--:--"}<br>
+
+Pausa aggiuntiva:
+${x.break||0} min<br>
+
+<b>Totale giornata: ${fmt(x.total||0)}</b><br>
+
+<button onclick="editDay('${x.date}')">
+Modifica
+</button>
+
+<button class="danger" onclick="delDay('${x.date}')">
+Elimina
+</button>
+
+</div>
+
+`).join("")
+
+:
+
+"<p class='small'>Nessuna giornata registrata.</p>";
+
 }
+
+
 function exportCSV(){
- const d=load(), m=month.value; let arr=Object.values(d).filter(x=>x.date.startsWith(m)).sort((a,b)=>a.date.localeCompare(b.date));
- let csv="Data;Inizio;Fine;Pausa minuti;Ore lavorate\n"+arr.map(x=>`${x.date};${x.start};${x.end};${x.break};${fmt(x.total)}`).join("\n");
- const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
- const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ore_di_lavoro_"+m+".csv";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+
+const d=load();
+
+const m=month.value;
+
+
+let arr=Object.values(d)
+
+.filter(x=>x.date && x.date.startsWith(m))
+
+.sort((a,b)=>a.date.localeCompare(b.date));
+
+
+let csv=
+"Data;Inizio mattina;Fine mattina;Inizio sera;Fine sera;Pausa minuti;Ore lavorate\n"
+
+
++
+arr.map(x=>
+
+`${x.date};${x.startMorning||""};${x.endMorning||""};${x.startEvening||""};${x.endEvening||""};${x.break||0};${fmt(x.total||0)}`
+
+).join("\n");
+
+
+const blob=new Blob(
+["\ufeff"+csv],
+{type:"text/csv;charset=utf-8"}
+);
+
+
+const a=document.createElement("a");
+
+a.href=URL.createObjectURL(blob);
+
+a.download="ore_di_lavoro_"+m+".csv";
+
+a.click();
+
+setTimeout(
+()=>URL.revokeObjectURL(a.href),
+1000
+);
+
 }
+
+
 init();
+
 </script>
+
 </body>
 </html>
